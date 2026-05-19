@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Background -->
+  <rect width="128" height="128" rx="24" fill="#1e1e2e"/>
+  <!-- Curly braces -->
+  <!-- Left brace -->
+  <path d="M 38 22
+           Q 26 22 26 34
+           L 26 54
+           Q 26 64 16 64
+           Q 26 64 26 74
+           L 26 94
+           Q 26 106 38 106"
+        stroke="#89b4fa" stroke-width="9" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Right brace -->
+  <path d="M 90 22
+           Q 102 22 102 34
+           L 102 54
+           Q 102 64 112 64
+           Q 102 64 102 74
+           L 102 94
+           Q 102 106 90 106"
+        stroke="#89b4fa" stroke-width="9" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Center dots (colon-like) -->
+  <circle cx="64" cy="50" r="5" fill="#a6e3a1"/>
+  <circle cx="64" cy="78" r="5" fill="#a6e3a1"/>
+</svg>

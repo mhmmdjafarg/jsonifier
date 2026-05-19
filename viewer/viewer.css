@@ -1,0 +1,276 @@
+/* ─── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:          #1e1e2e;
+  --surface:     #181825;
+  --surface2:    #313244;
+  --border:      #45475a;
+  --text:        #cdd6f4;
+  --text-muted:  #6c7086;
+  --accent:      #89b4fa;
+
+  /* Syntax colours (Catppuccin-inspired) */
+  --col-key:     #89b4fa;   /* blue   — object keys */
+  --col-string:  #a6e3a1;   /* green  — string values */
+  --col-number:  #fab387;   /* peach  — numbers */
+  --col-bool:    #cba6f7;   /* mauve  — true / false */
+  --col-null:    #f38ba8;   /* red    — null */
+  --col-bracket: #cdd6f4;   /* base   — { } [ ] */
+  --col-index:   #585b70;   /* subtext — array indices */
+
+  --error-bg:    #45132a;
+  --error-text:  #f38ba8;
+  --error-border: #f38ba8;
+
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace,
+               "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-ui:   -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --indent: 20px;
+  --radius: 6px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Header ────────────────────────────────────────────────── */
+#header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#header h1 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+  flex: 1;
+}
+
+#btn-clear {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  padding: 3px 9px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+#btn-clear:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#btn-collapse-all,
+#btn-expand-all {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  padding: 3px 9px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+#btn-collapse-all:hover,
+#btn-expand-all:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ─── Input section ─────────────────────────────────────────── */
+#input-section {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 0;
+  gap: 6px;
+}
+
+#input-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+}
+
+#json-input {
+  width: 100%;
+  height: 140px;
+  resize: vertical;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.15s;
+}
+#json-input:focus {
+  border-color: var(--accent);
+}
+#json-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ─── Error banner ──────────────────────────────────────────── */
+#error-banner {
+  display: none;
+  margin: 8px 14px 0;
+  padding: 8px 12px;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius);
+  color: var(--error-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+#error-banner.visible {
+  display: block;
+}
+
+#error-banner .error-label {
+  font-weight: 700;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  margin-bottom: 2px;
+  color: var(--error-text);
+}
+
+#error-banner .error-location {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* ─── Output divider ────────────────────────────────────────── */
+#output-label {
+  padding: 8px 14px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ─── Tree output ───────────────────────────────────────────── */
+#tree-output {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 6px 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+#tree-output::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+#tree-output::-webkit-scrollbar-track {
+  background: transparent;
+}
+#tree-output::-webkit-scrollbar-thumb {
+  background: var(--surface2);
+  border-radius: 3px;
+}
+#tree-output::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
+
+/* Empty state */
+#tree-placeholder {
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 12px 0;
+}
+
+/* ─── Tree nodes ────────────────────────────────────────────── */
+.node {
+  white-space: pre;
+  padding-left: var(--indent);
+  position: relative;
+}
+
+/* Root node has no extra indent */
+#tree-output > .node {
+  padding-left: 0;
+}
+
+.node-header,
+.node-footer,
+.node-primitive {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  white-space: pre;
+}
+
+/* Vertical guide lines */
+.node-children {
+  border-left: 1px solid var(--border);
+  margin-left: 8px;
+  padding-left: calc(var(--indent) - 8px);
+}
+
+/* ─── Toggle arrow ──────────────────────────────────────────── */
+.toggle {
+  display: inline-block;
+  width: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 10px;
+  user-select: none;
+  transition: color 0.1s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.toggle:hover {
+  color: var(--accent);
+}
+
+/* ─── Syntax colouring ──────────────────────────────────────── */
+.key        { color: var(--col-key); }
+.key-index  { color: var(--col-index); }
+.bracket    { color: var(--col-bracket); }
+
+.value-string  { color: var(--col-string); }
+.value-number  { color: var(--col-number); }
+.value-boolean { color: var(--col-bool); }
+.value-null    { color: var(--col-null); }
+
+/* Collapsed preview */
+.collapsed-preview {
+  color: var(--text-muted);
+  font-style: italic;
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jsonifier</title>
+  <link rel="stylesheet" href="viewer.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <div id="header">
+    <h1>Jsonifier</h1>
+    <button id="btn-expand-all" title="Expand all nodes">Expand all</button>
+    <button id="btn-collapse-all" title="Collapse all nodes">Collapse all</button>
+    <button id="btn-clear" title="Clear input and output">Clear</button>
+  </div>
+
+  <!-- Raw JSON input -->
+  <div id="input-section">
+    <div id="input-label">Paste JSON</div>
+    <textarea
+      id="json-input"
+      placeholder='Paste JSON here, e.g. {"name":"Alice","age":30}'
+      spellcheck="false"
+      autocomplete="off"
+      autocorrect="off"
+    ></textarea>
+  </div>
+
+  <!-- Error banner (hidden when JSON is valid) -->
+  <div id="error-banner" role="alert" aria-live="polite">
+    <div class="error-label">Invalid JSON</div>
+    <div id="error-message"></div>
+    <div id="error-location" class="error-location"></div>
+  </div>
+
+  <!-- Tree output label -->
+  <div id="output-label">Formatted output</div>
+
+  <!-- Collapsible tree -->
+  <div id="tree-output" aria-label="Formatted JSON tree">
+    <div id="tree-placeholder">Paste valid JSON above to see the formatted tree.</div>
+  </div>
+
+  <script src="parser.js"></script>
+  <script src="tree.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>
