@@ -157,7 +157,6 @@ body {
   outline: none;
   transition: border-color 0.15s;
   white-space: pre-wrap;
-  word-break: break-word;
   overflow-wrap: anywhere;
 }
 #json-input:focus {
@@ -244,7 +243,6 @@ body {
   font-size: 12px;
   line-height: 1.7;
   overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 #tree-output::-webkit-scrollbar {
@@ -299,7 +297,25 @@ body {
 .collapsed-preview {
   min-width: 0;
   overflow-wrap: anywhere;
-  word-break: break-word;
+}
+
+/* Embedded JSON badge — shown next to keys whose value was actually
+   an escaped JSON string and got auto-unwrapped. */
+.embedded-badge {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--col-string);
+  color: var(--bg);
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin: 0 6px 0 0;
+  line-height: 1.4;
+  cursor: help;
+  flex-shrink: 0;
 }
 
 /* Vertical guide lines */

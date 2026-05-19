@@ -32,18 +32,53 @@ function renderTree(value) {
 function renderNode(key, value, depth, isLast) {
   const type = getType(value);
 
+  // Auto-unwrap nested string-JSON.
+  // If the value is a string that looks like an object/array
+  // (e.g. `"{\"a\":1}"` inside a log field), parse it and render
+  // the inner structure as a sub-tree with an "unwrapped" badge so
+  // the reader can see this value was actually a string in the source.
+  if (type === "string" && looksLikeEmbeddedJSON(value)) {
+    const inner = tryParseJSON(value);
+    if (inner.ok && isContainer(inner.value)) {
+      const innerType = Array.isArray(inner.value) ? "array" : "object";
+      return renderCollapsible(key, inner.value, innerType, depth, isLast, true);
+    }
+  }
+
   if (type === "object" || type === "array") {
-    return renderCollapsible(key, value, type, depth, isLast);
+    return renderCollapsible(key, value, type, depth, isLast, false);
   }
 
   return renderPrimitive(key, value, type, isLast);
+}
+
+/** Cheap pre-check: does this string look like a JSON object or array literal? */
+function looksLikeEmbeddedJSON(str) {
+  if (typeof str !== "string") return false;
+  const trimmed = str.trim();
+  if (trimmed.length < 2) return false;
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+  return (first === "{" && last === "}") || (first === "[" && last === "]");
+}
+
+function tryParseJSON(str) {
+  try {
+    return { ok: true, value: JSON.parse(str) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+function isContainer(value) {
+  return value !== null && (Array.isArray(value) || typeof value === "object");
 }
 
 // ---------------------------------------------------------------------------
 // Collapsible containers (objects and arrays)
 // ---------------------------------------------------------------------------
 
-function renderCollapsible(key, value, type, depth, isLast) {
+function renderCollapsible(key, value, type, depth, isLast, embedded = false) {
   const isArray = type === "array";
   const entries = isArray ? value : Object.entries(value);
   const count = isArray ? value.length : entries.length;
@@ -54,6 +89,7 @@ function renderCollapsible(key, value, type, depth, isLast) {
 
   const wrapper = createElement("div", "node node-collapsible");
   wrapper.dataset.depth = depth;
+  if (embedded) wrapper.classList.add("node-embedded");
 
   // --- Header row (toggle + key + bracket) ---
   const header = createElement("div", "node-header");
@@ -68,6 +104,8 @@ function renderCollapsible(key, value, type, depth, isLast) {
     header.appendChild(renderKey(key, isArray));
     header.appendChild(makeText(": "));
   }
+
+  if (embedded) header.appendChild(makeEmbeddedBadge());
 
   if (count === 0) {
     header.appendChild(makeSpan("bracket", emptyLabel));
@@ -216,4 +254,11 @@ function makeSpan(className, text) {
 
 function makeText(str) {
   return document.createTextNode(str);
+}
+
+function makeEmbeddedBadge() {
+  const badge = createElement("span", "embedded-badge");
+  badge.textContent = "json";
+  badge.title = "This value was an escaped JSON string — auto-unwrapped";
+  return badge;
 }

@@ -12,7 +12,7 @@ Paste any JSON and instantly see it as a **collapsible, syntax-highlighted tree*
 - **Paste & go** — no buttons, no formatting step. Paste JSON into the text area and the formatted tree renders instantly.
 - **Collapsible tree** — click the `▼` next to any object or array to fold its contents. Collapsed nodes show a friendly preview (`5 items`, or the first few keys).
 - **Expand / Collapse all** — toolbar buttons to flatten or fold the whole tree in one click.
-- **Auto-unwrap escaped JSON** — paste a string like `"{\"a\":1}"` straight from a log and it renders as a tree. A badge tells you how many layers of escaping were peeled off.
+- **Auto-unwrap escaped JSON** — paste a string like `"{\"a\":1}"` straight from a log and it renders as a tree. Also unwraps **nested** escaped JSON inside any string field (common in log entries with a `"request"` / `"response"` / `"payload"` field whose value is a stringified JSON blob). Unwrapped values are tagged with a small green `json` badge.
 - **Unescape / Escape buttons** — manually peel one layer of string-wrapping off the input, or re-wrap it. Handy for round-tripping payloads through systems that double-encode.
 - **Syntax highlighting** — keys, strings, numbers, booleans, and `null` each get their own colour for fast scanning.
 - **Precise error reporting** — when the JSON is invalid, you get the parser's message plus the exact **line and column** where it broke.
@@ -49,6 +49,8 @@ Logs and API responses sometimes ship JSON *inside* a JSON string, with all the 
 ```
 
 Paste that directly and Jsonifier renders the tree of the inner object — a green **Unwrapped from escaped string** badge appears so you know what happened. It handles double- and triple-escaped payloads up to 5 levels deep.
+
+The same trick also works on **nested** fields. If a value inside your JSON is itself a stringified JSON blob (very common with log entries that have a `request`, `response`, or `payload` field), the viewer detects it, parses it, and renders the inner tree right where the string would have been. A small green `json` badge sits next to the key so you know the source still has it as a string.
 
 If you'd rather do it by hand:
 
