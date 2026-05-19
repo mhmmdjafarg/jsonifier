@@ -106,12 +106,40 @@ body {
   gap: 6px;
 }
 
+#input-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 #input-label {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--text-muted);
+}
+
+.input-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.input-actions button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  padding: 3px 9px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  font-family: var(--font-ui);
+}
+.input-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 #json-input {
@@ -174,14 +202,36 @@ body {
 }
 
 /* ─── Output divider ────────────────────────────────────────── */
-#output-label {
+#output-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 8px 14px 4px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#output-label {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--text-muted);
-  flex-shrink: 0;
+}
+
+#unwrap-indicator {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--bg);
+  background: var(--col-string);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+#unwrap-indicator.hidden {
+  display: none;
 }
 
 /* ─── Tree output ───────────────────────────────────────────── */

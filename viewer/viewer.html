@@ -18,7 +18,13 @@
 
   <!-- Raw JSON input -->
   <div id="input-section">
-    <div id="input-label">Paste JSON</div>
+    <div id="input-toolbar">
+      <div id="input-label">Paste JSON</div>
+      <div class="input-actions">
+        <button id="btn-unescape" title="Unwrap an escaped JSON string (one level)">Unescape</button>
+        <button id="btn-escape" title="Wrap the current content as an escaped JSON string">Escape</button>
+      </div>
+    </div>
     <textarea
       id="json-input"
       placeholder='Paste JSON here, e.g. {"name":"Alice","age":30}'
@@ -35,8 +41,11 @@
     <div id="error-location" class="error-location"></div>
   </div>
 
-  <!-- Tree output label -->
-  <div id="output-label">Formatted output</div>
+  <!-- Tree output label + unwrap indicator -->
+  <div id="output-bar">
+    <div id="output-label">Formatted output</div>
+    <div id="unwrap-indicator" class="hidden" title="Input was an escaped JSON string and was auto-unwrapped"></div>
+  </div>
 
   <!-- Collapsible tree -->
   <div id="tree-output" aria-label="Formatted JSON tree">

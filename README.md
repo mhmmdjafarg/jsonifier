@@ -12,8 +12,11 @@ Paste any JSON and instantly see it as a **collapsible, syntax-highlighted tree*
 - **Paste & go** — no buttons, no formatting step. Paste JSON into the text area and the formatted tree renders instantly.
 - **Collapsible tree** — click the `▼` next to any object or array to fold its contents. Collapsed nodes show a friendly preview (`5 items`, or the first few keys).
 - **Expand / Collapse all** — toolbar buttons to flatten or fold the whole tree in one click.
+- **Auto-unwrap escaped JSON** — paste a string like `"{\"a\":1}"` straight from a log and it renders as a tree. A badge tells you how many layers of escaping were peeled off.
+- **Unescape / Escape buttons** — manually peel one layer of string-wrapping off the input, or re-wrap it. Handy for round-tripping payloads through systems that double-encode.
 - **Syntax highlighting** — keys, strings, numbers, booleans, and `null` each get their own colour for fast scanning.
 - **Precise error reporting** — when the JSON is invalid, you get the parser's message plus the exact **line and column** where it broke.
+- **Word wrap** — long string values wrap to the panel width instead of forcing horizontal scroll.
 - **Dark theme** — easy on the eyes during long debugging sessions (Catppuccin-inspired palette).
 - **No dependencies** — pure vanilla HTML, CSS, and JavaScript. No bundler, no frameworks, no telemetry.
 
@@ -36,6 +39,21 @@ Paste any JSON and instantly see it as a **collapsible, syntax-highlighted tree*
 3. The formatted tree appears below. Click any `▼` to collapse a node, or use the **Expand all** / **Collapse all** buttons.
 4. If your JSON is malformed, a red banner shows the parse error along with the exact line and column. Fix the input and the tree re-renders automatically.
 5. Navigate between tabs and pages — the side panel stays open and keeps your JSON visible. Click the toolbar icon again to close it.
+
+### Working with escaped JSON strings
+
+Logs and API responses sometimes ship JSON *inside* a JSON string, with all the inner quotes escaped:
+
+```text
+"{\"name\":\"Alice\",\"age\":30}"
+```
+
+Paste that directly and Jsonifier renders the tree of the inner object — a green **Unwrapped from escaped string** badge appears so you know what happened. It handles double- and triple-escaped payloads up to 5 levels deep.
+
+If you'd rather do it by hand:
+
+- **Unescape** — peels off one layer of string-wrapping from the textarea. Press it again to peel another layer.
+- **Escape** — wraps the current textarea content as a JSON-encoded string. Use this to produce a payload you can drop into another JSON document.
 
 ---
 
