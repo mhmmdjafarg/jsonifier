@@ -123,6 +123,8 @@ body {
 
 .input-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
 }
 
@@ -134,12 +136,25 @@ body {
   padding: 3px 9px;
   font-size: 11px;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
   font-family: var(--font-ui);
 }
 .input-actions button:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+.input-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* Transient "Copied!" state for the copy button after a successful clipboard write. */
+.input-actions button.copied,
+.input-actions button.copied:hover {
+  border-color: var(--col-string);
+  color: var(--col-string);
 }
 
 /* Editor = line-number gutter + textarea, framed as one bordered field. */
