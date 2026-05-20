@@ -7,6 +7,7 @@
  */
 
 const jsonInput      = document.getElementById("json-input");
+const lineNumbers    = document.getElementById("line-numbers");
 const errorBanner    = document.getElementById("error-banner");
 const errorMessage   = document.getElementById("error-message");
 const errorLocation  = document.getElementById("error-location");
@@ -23,9 +24,13 @@ const btnEscape      = document.getElementById("btn-escape");
 const DEBOUNCE_MS = 250;
 let debounceTimer = null;
 
+// Most recent parse error location, used by the "jump to error" affordance.
+let lastErrorPosition = -1;
+
 // ─── Input handler ───────────────────────────────────────────────────────────
 
 jsonInput.addEventListener("input", () => {
+  updateLineNumbers();
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(process, DEBOUNCE_MS);
 });
@@ -34,8 +39,24 @@ jsonInput.addEventListener("input", () => {
 jsonInput.addEventListener("paste", () => {
   clearTimeout(debounceTimer);
   // Let the paste event finish first, then process
-  setTimeout(process, 0);
+  setTimeout(() => {
+    updateLineNumbers();
+    process();
+  }, 0);
 });
+
+// Keep the gutter scrolled to match the textarea.
+jsonInput.addEventListener("scroll", () => {
+  lineNumbers.scrollTop = jsonInput.scrollTop;
+});
+
+// Click the "Line N, Column M" hint to jump straight to the offending character.
+errorLocation.addEventListener("click", () => {
+  if (lastErrorPosition < 0) return;
+  jumpToPosition(lastErrorPosition);
+});
+
+updateLineNumbers();
 
 // ─── Core pipeline ───────────────────────────────────────────────────────────
 
@@ -79,9 +100,13 @@ function showError(result) {
   errorMessage.textContent = result.message;
 
   if (result.line > 0) {
-    errorLocation.textContent = `Line ${result.line}, Column ${result.col}`;
+    errorLocation.textContent = `Line ${result.line}, Column ${result.col} — click to jump`;
+    errorLocation.hidden = false;
+    lastErrorPosition = Number.isFinite(result.position) ? result.position : -1;
   } else {
     errorLocation.textContent = "";
+    errorLocation.hidden = true;
+    lastErrorPosition = -1;
   }
 
   errorBanner.classList.add("visible");
@@ -91,6 +116,8 @@ function hideError() {
   errorBanner.classList.remove("visible");
   errorMessage.textContent = "";
   errorLocation.textContent = "";
+  errorLocation.hidden = true;
+  lastErrorPosition = -1;
 }
 
 function showUnwrapBadge(depth) {
@@ -116,6 +143,7 @@ function clearOutput() {
 
 btnClear.addEventListener("click", () => {
   jsonInput.value = "";
+  updateLineNumbers();
   clearOutput();
   jsonInput.focus();
 });
@@ -137,6 +165,7 @@ btnUnescape.addEventListener("click", () => {
     return;
   }
   jsonInput.value = result.value;
+  updateLineNumbers();
   process();
 });
 
@@ -145,6 +174,7 @@ btnUnescape.addEventListener("click", () => {
 btnEscape.addEventListener("click", () => {
   if (!jsonInput.value) return;
   jsonInput.value = escapeOneLayer(jsonInput.value);
+  updateLineNumbers();
   process();
 });
 
@@ -163,4 +193,71 @@ function setAllNodes(collapse) {
       toggle.click();
     }
   });
+}
+
+// ─── Editor gutter ───────────────────────────────────────────────────────────
+
+/**
+ * Repaint the line-number gutter to match the textarea's logical line count.
+ * Logical lines are split by "\n" — this is what the parser reports in errors,
+ * which is why the textarea uses `white-space: pre` (one logical line = one
+ * visual row).
+ */
+function updateLineNumbers() {
+  const text = jsonInput.value;
+  // A textarea with N newline chars has N+1 logical lines (the last one may be empty).
+  const lineCount = text.length === 0 ? 1 : countLines(text);
+
+  // Build "1\n2\n...\nN" — cheaper than touching the DOM per line.
+  let buffer = "";
+  for (let i = 1; i <= lineCount; i++) {
+    buffer += i + (i < lineCount ? "\n" : "");
+  }
+  lineNumbers.textContent = buffer;
+
+  // Resize the gutter so wide line numbers (e.g. 4+ digits) don't get clipped.
+  const digits = String(lineCount).length;
+  lineNumbers.style.minWidth = Math.max(36, digits * 9 + 16) + "px";
+
+  // Stay in sync with the textarea's current scroll position.
+  lineNumbers.scrollTop = jsonInput.scrollTop;
+}
+
+function countLines(text) {
+  let n = 1;
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 10 /* \n */) n++;
+  }
+  return n;
+}
+
+/**
+ * Focus the textarea, place the cursor at `position`, select the offending
+ * character (when present), and scroll the textarea so it's visible.
+ */
+function jumpToPosition(position) {
+  const len = jsonInput.value.length;
+  const start = Math.max(0, Math.min(position, len));
+  const end = Math.min(start + 1, len);
+
+  jsonInput.focus();
+  jsonInput.setSelectionRange(start, end);
+
+  // Approximate scroll-into-view: move to roughly the right line.
+  // line-height: 1.5 * 12px font ≈ 18px per row; subtract a couple of lines
+  // of context above so the cursor isn't pinned to the top edge.
+  const lineHeight = 18;
+  const linesBefore = countNewlines(jsonInput.value, start);
+  const targetTop = Math.max(0, (linesBefore - 2) * lineHeight);
+  jsonInput.scrollTop = targetTop;
+  lineNumbers.scrollTop = targetTop;
+}
+
+function countNewlines(text, upto) {
+  let n = 0;
+  const max = Math.min(upto, text.length);
+  for (let i = 0; i < max; i++) {
+    if (text.charCodeAt(i) === 10) n++;
+  }
+  return n;
 }
