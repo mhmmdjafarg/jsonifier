@@ -19,6 +19,14 @@ const btnCollapseAll = document.getElementById("btn-collapse-all");
 const btnExpandAll   = document.getElementById("btn-expand-all");
 const btnUnescape    = document.getElementById("btn-unescape");
 const btnEscape      = document.getElementById("btn-escape");
+const btnBeautify    = document.getElementById("btn-beautify");
+const btnMinify      = document.getElementById("btn-minify");
+const btnCopy        = document.getElementById("btn-copy");
+
+// Indentation used by the Beautify action.
+const BEAUTIFY_INDENT = 2;
+// How long the Copy button shows its "Copied!" affordance, in ms.
+const COPY_FEEDBACK_MS = 1200;
 
 // Debounce delay in ms — avoids re-rendering on every keystroke
 const DEBOUNCE_MS = 250;
@@ -178,6 +186,26 @@ btnEscape.addEventListener("click", () => {
   process();
 });
 
+// Beautify: pretty-print the input with 2-space indentation.
+//   {"a":1,"b":[2,3]}   →   {\n  "a": 1,\n  "b": [\n    2,\n    3\n  ]\n}
+//
+// Uses plain JSON.parse — NOT parseJSON() — so we don't silently unwrap an
+// escaped string. Users who want unwrapping can hit Unescape first.
+btnBeautify.addEventListener("click", () => {
+  reformatInput((value) => JSON.stringify(value, null, BEAUTIFY_INDENT));
+});
+
+// Minify: strip all insignificant whitespace.
+//   {\n  "a": 1\n}   →   {"a":1}
+btnMinify.addEventListener("click", () => {
+  reformatInput((value) => JSON.stringify(value));
+});
+
+// Copy: send the current input to the system clipboard.
+btnCopy.addEventListener("click", () => {
+  copyInputToClipboard();
+});
+
 /**
  * Programmatically collapse or expand every collapsible node by clicking its toggle.
  * We read the current state from the toggle text to avoid double-toggling.
@@ -260,4 +288,105 @@ function countNewlines(text, upto) {
     if (text.charCodeAt(i) === 10) n++;
   }
   return n;
+}
+
+// ─── Text transforms (beautify / minify / copy) ──────────────────────────────
+
+/**
+ * Parse the current input, hand the parsed value to `stringifyFn`, and write
+ * the result back to the textarea. On parse failure we surface the existing
+ * error banner via process() so the user gets the line/column they need to
+ * fix things up.
+ */
+function reformatInput(stringifyFn) {
+  const text = jsonInput.value;
+  if (!text.trim()) return;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // Let the regular pipeline produce the (now nicer) error banner.
+    process();
+    return;
+  }
+
+  jsonInput.value = stringifyFn(parsed);
+  updateLineNumbers();
+  jsonInput.scrollTop = 0;
+  process();
+}
+
+/**
+ * Copy the textarea content to the clipboard. Uses the async Clipboard API
+ * when available, falling back to a legacy execCommand path for older
+ * browsers (or contexts where the new API is blocked).
+ */
+function copyInputToClipboard() {
+  const text = jsonInput.value;
+  if (!text) return;
+
+  const done = (ok) => flashButton(btnCopy, ok ? "Copied!" : "Copy failed", ok ? "copied" : null);
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => done(true),
+      () => done(legacyCopy(text)),
+    );
+  } else {
+    done(legacyCopy(text));
+  }
+}
+
+/** execCommand-based fallback. Returns true on success. */
+function legacyCopy(text) {
+  const ghost = document.createElement("textarea");
+  ghost.value = text;
+  ghost.setAttribute("readonly", "");
+  ghost.style.position = "fixed";
+  ghost.style.opacity = "0";
+  ghost.style.pointerEvents = "none";
+  document.body.appendChild(ghost);
+  ghost.select();
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
+  ghost.remove();
+  return ok;
+}
+
+/**
+ * Temporarily swap a button's label (and optionally toggle a class) to give
+ * the user immediate feedback for an action that produced no visible change
+ * elsewhere in the UI — e.g. "Copied!" after Copy.
+ */
+function flashButton(button, transientLabel, transientClass) {
+  if (button._flashTimer) {
+    clearTimeout(button._flashTimer);
+    if (button._flashOriginalLabel != null) {
+      button.textContent = button._flashOriginalLabel;
+    }
+    if (button._flashAddedClass) {
+      button.classList.remove(button._flashAddedClass);
+    }
+  }
+
+  button._flashOriginalLabel = button.textContent;
+  button._flashAddedClass = transientClass || null;
+
+  button.textContent = transientLabel;
+  if (transientClass) button.classList.add(transientClass);
+
+  button._flashTimer = setTimeout(() => {
+    button.textContent = button._flashOriginalLabel;
+    if (button._flashAddedClass) {
+      button.classList.remove(button._flashAddedClass);
+    }
+    button._flashTimer = null;
+    button._flashOriginalLabel = null;
+    button._flashAddedClass = null;
+  }, COPY_FEEDBACK_MS);
 }
