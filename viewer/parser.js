@@ -80,39 +80,92 @@ function escapeOneLayer(text) {
 function buildErrorResult(text, err) {
   const raw = err.message || "Invalid JSON";
 
-  // Extract character position from V8 error messages.
-  // Patterns:
-  //   "... at position 45"
-  //   "... (line 3 column 5)"  — some environments
-  let position = extractPosition(raw);
-  const { line, col } = positionToLineCol(text, position);
+  // V8 has several SyntaxError formats. We try each in turn to recover
+  // the precise character offset of the failure:
+  //   • "... in JSON at position 45 (line 3 column 5)"  (older / verbose)
+  //   • "... at position 45"                            (older / short)
+  //   • "Unexpected token X, \"snippet\" is not valid JSON"  (Node 19+ / Chrome 102+)
+  // The third form omits position entirely, so we locate the snippet inside
+  // the source text and pinpoint the bad character within it. Without this
+  // fallback we incorrectly report "end of input" for most real errors.
+  const { line, col, position } = extractLocation(text, raw);
 
-  // Produce a clean, human-friendly message by stripping the "JSON at position N" suffix.
-  const message = raw
-    .replace(/\s+in JSON\b.*$/, "")
-    .replace(/\s+at position \d+$/, "")
-    .trim();
+  const message = sanitizeMessage(raw);
 
   return { ok: false, message, line, col, position };
 }
 
-/** Pull the character offset out of V8 SyntaxError messages. Returns -1 if not found. */
-function extractPosition(message) {
-  // "at position 45"
+/**
+ * Resolve a JSON SyntaxError to a 1-based line/col plus the matching 0-based
+ * character offset in `text`. Returns { line: 0, col: 0, position: -1 } if we
+ * truly cannot tell.
+ */
+function extractLocation(text, message) {
+  // 1. "(line N column M)" is the most direct signal when present.
+  const lcMatch = message.match(/\(line (\d+) column (\d+)\)/);
+  if (lcMatch) {
+    const line = parseInt(lcMatch[1], 10);
+    const col = parseInt(lcMatch[2], 10);
+    return { line, col, position: lineColToPosition(text, line, col) };
+  }
+
+  // 2. "at position N"
   const posMatch = message.match(/at position (\d+)/);
-  if (posMatch) return parseInt(posMatch[1], 10);
+  if (posMatch) {
+    const position = parseInt(posMatch[1], 10);
+    return { ...positionToLineCol(text, position), position };
+  }
 
-  // "(line N column M)" — Node.js / some engines
-  const lineColMatch = message.match(/\(line (\d+) column (\d+)\)/);
-  if (lineColMatch) return -1; // we'll handle this separately if needed
+  // 3. Snippet form: 'Unexpected token X, [...]"SNIPPET" is not valid JSON'
+  //    The snippet is a verbatim slice of the source around the failure.
+  //    We find it back in the source, then jump to the offending character.
+  const snippet = extractSnippet(message);
+  if (snippet !== null && snippet.length > 0) {
+    const start = text.indexOf(snippet);
+    if (start >= 0) {
+      // V8's snippet starts at (or close to) the error position and often
+      // includes a little trailing context. Locating the FIRST occurrence
+      // of the offending character lands us on the real failure; using
+      // the last occurrence overshoots for inputs like "[1, 2, foo]"
+      // where the bad character repeats inside the trailing context.
+      let offset = 0;
+      const tokenMatch = message.match(/Unexpected token '(.)'/);
+      if (tokenMatch) {
+        const first = snippet.indexOf(tokenMatch[1]);
+        if (first >= 0) offset = first;
+      }
+      const position = start + offset;
+      return { ...positionToLineCol(text, position), position };
+    }
+  }
 
-  return -1;
+  return { line: 0, col: 0, position: -1 };
+}
+
+/**
+ * Pull the source snippet out of a V8 "is not valid JSON" message.
+ * The snippet is wrapped in literal double quotes and may itself contain
+ * unescaped double quotes (V8 doesn't escape them), so we anchor on the
+ * trailing literal and take everything between.
+ */
+function extractSnippet(message) {
+  // The snippet may be preceded by a "..." truncation marker.
+  const match = message.match(/,\s+(?:\.\.\.)?"([\s\S]*)"\s+is not valid JSON\b/);
+  return match ? match[1] : null;
+}
+
+/** Strip noisy V8 location/snippet suffixes to produce a human-friendly message. */
+function sanitizeMessage(raw) {
+  return raw
+    .replace(/,\s+(?:\.\.\.)?"[\s\S]*"\s+is not valid JSON\b.*$/, "")
+    .replace(/\s+in JSON\b.*$/, "")
+    .replace(/\s+at position \d+(?:\s*\(line \d+ column \d+\))?$/, "")
+    .trim();
 }
 
 /** Convert a 0-based character offset into { line, col } (both 1-based). */
 function positionToLineCol(text, position) {
   if (position < 0 || position > text.length) {
-    // Try to at least point to the end of input
     position = Math.max(0, text.length - 1);
   }
 
@@ -129,4 +182,20 @@ function positionToLineCol(text, position) {
   }
 
   return { line, col };
+}
+
+/** Convert a 1-based line/col back into a 0-based character offset. */
+function lineColToPosition(text, line, col) {
+  let curLine = 1;
+  let curCol = 1;
+  for (let i = 0; i < text.length; i++) {
+    if (curLine === line && curCol === col) return i;
+    if (text[i] === "\n") {
+      curLine++;
+      curCol = 1;
+    } else {
+      curCol++;
+    }
+  }
+  return text.length;
 }

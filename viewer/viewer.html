@@ -25,20 +25,24 @@
         <button id="btn-escape" title="Wrap the current content as an escaped JSON string">Escape</button>
       </div>
     </div>
-    <textarea
-      id="json-input"
-      placeholder='Paste JSON here, e.g. {"name":"Alice","age":30}'
-      spellcheck="false"
-      autocomplete="off"
-      autocorrect="off"
-    ></textarea>
+    <div id="editor">
+      <div id="line-numbers" aria-hidden="true">1</div>
+      <textarea
+        id="json-input"
+        placeholder='Paste JSON here, e.g. {"name":"Alice","age":30}'
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        wrap="off"
+      ></textarea>
+    </div>
   </div>
 
   <!-- Error banner (hidden when JSON is valid) -->
   <div id="error-banner" role="alert" aria-live="polite">
     <div class="error-label">Invalid JSON</div>
     <div id="error-message"></div>
-    <div id="error-location" class="error-location"></div>
+    <button type="button" id="error-location" class="error-location" hidden></button>
   </div>
 
   <!-- Tree output label + unwrap indicator -->

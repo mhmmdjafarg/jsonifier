@@ -142,25 +142,62 @@ body {
   color: var(--accent);
 }
 
-#json-input {
+/* Editor = line-number gutter + textarea, framed as one bordered field. */
+#editor {
+  display: flex;
+  align-items: stretch;
   width: 100%;
   height: 140px;
-  resize: vertical;
   background: var(--surface);
-  color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+  resize: vertical;
+  min-height: 80px;
+}
+
+#editor:focus-within {
+  border-color: var(--accent);
+}
+
+#line-numbers {
+  flex-shrink: 0;
+  min-width: 36px;
+  padding: 10px 8px 10px 10px;
+  background: var(--surface);
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: right;
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none;
+  /* Match textarea vertical scroll via JS */
+}
+
+#json-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  background: var(--surface);
+  color: var(--text);
+  border: none;
+  border-radius: 0;
   padding: 10px 12px;
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.5;
   outline: none;
-  transition: border-color 0.15s;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-#json-input:focus {
-  border-color: var(--accent);
+  /* Disable visual wrapping so logical lines (\n) line up with the gutter */
+  white-space: pre;
+  overflow: auto;
+  tab-size: 2;
 }
 #json-input::placeholder {
   color: var(--text-muted);
@@ -196,8 +233,27 @@ body {
 }
 
 #error-banner .error-location {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 0;
+  background: transparent;
+  border: none;
   color: var(--text-muted);
+  font-family: var(--font-mono);
   font-size: 11px;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+#error-banner .error-location:hover,
+#error-banner .error-location:focus-visible {
+  color: var(--error-text);
+  outline: none;
+}
+
+#error-banner .error-location[hidden] {
+  display: none;
 }
 
 /* ─── Output divider ────────────────────────────────────────── */
