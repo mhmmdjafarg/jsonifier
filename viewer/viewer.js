@@ -32,6 +32,8 @@ const COPY_FEEDBACK_MS = 1200;
 const DEBOUNCE_MS = 250;
 let debounceTimer = null;
 
+const STORAGE_KEY = "jsonifier_input";
+
 // Most recent parse error location, used by the "jump to error" affordance.
 let lastErrorPosition = -1;
 
@@ -40,15 +42,18 @@ let lastErrorPosition = -1;
 jsonInput.addEventListener("input", () => {
   updateLineNumbers();
   clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(process, DEBOUNCE_MS);
+  debounceTimer = setTimeout(() => {
+    persistInput(jsonInput.value);
+    process();
+  }, DEBOUNCE_MS);
 });
 
 // Also handle paste directly for immediate feedback
 jsonInput.addEventListener("paste", () => {
   clearTimeout(debounceTimer);
-  // Let the paste event finish first, then process
   setTimeout(() => {
     updateLineNumbers();
+    persistInput(jsonInput.value);
     process();
   }, 0);
 });
@@ -65,6 +70,7 @@ errorLocation.addEventListener("click", () => {
 });
 
 updateLineNumbers();
+restoreInput();
 
 // ─── Core pipeline ───────────────────────────────────────────────────────────
 
@@ -153,6 +159,7 @@ btnClear.addEventListener("click", () => {
   jsonInput.value = "";
   updateLineNumbers();
   clearOutput();
+  chrome.storage.local.remove(STORAGE_KEY);
   jsonInput.focus();
 });
 
@@ -174,6 +181,7 @@ btnUnescape.addEventListener("click", () => {
   }
   jsonInput.value = result.value;
   updateLineNumbers();
+  persistInput(jsonInput.value);
   process();
 });
 
@@ -183,6 +191,7 @@ btnEscape.addEventListener("click", () => {
   if (!jsonInput.value) return;
   jsonInput.value = escapeOneLayer(jsonInput.value);
   updateLineNumbers();
+  persistInput(jsonInput.value);
   process();
 });
 
@@ -313,6 +322,7 @@ function reformatInput(stringifyFn) {
 
   jsonInput.value = stringifyFn(parsed);
   updateLineNumbers();
+  persistInput(jsonInput.value);
   jsonInput.scrollTop = 0;
   process();
 }
@@ -389,4 +399,21 @@ function flashButton(button, transientLabel, transientClass) {
     button._flashOriginalLabel = null;
     button._flashAddedClass = null;
   }, COPY_FEEDBACK_MS);
+}
+
+// ─── Storage helpers ─────────────────────────────────────────────────────────
+
+function persistInput(value) {
+  chrome.storage.local.set({ [STORAGE_KEY]: value });
+}
+
+function restoreInput() {
+  chrome.storage.local.get(STORAGE_KEY, (result) => {
+    const saved = result[STORAGE_KEY];
+    if (saved) {
+      jsonInput.value = saved;
+      updateLineNumbers();
+      process();
+    }
+  });
 }
